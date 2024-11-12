@@ -1,0 +1,74 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+plugins {
+    id 'java'
+    id "application"
+    id "com.google.cloud.artifactregistry.gradle-plugin" version "2.2.0"
+    id "com.gradleup.shadow" version "8.3.1"
+}
+
+application {
+    mainClass.set('it.disi.unitn.lasagna.Main')
+    //applicationDefaultJvmArgs = ["-Djava.library.path=" + file("${buildDir}/libs/ffcodec/shared").absolutePath]
+}
+
+group = 'it.disi.unitn.lasagna'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url "artifactregistry://europe-west8-maven.pkg.dev/tirocinio-380209/ffmpeg-java"
+    }
+
+    exclusiveContent {
+        forRepository {
+            maven {
+                url 'https://mlt.jfrog.io/artifactory/mlt-mvn-releases-local'
+            }
+        }
+        filter {
+            includeGroup 'de.dfki.lt.jtok'
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "it.disi.unitn.lasagna.Main"
+        duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+// Output to build/libs folder
+shadowJar {
+    archiveBaseName.set('audio-extractor-shadow')
+    archiveClassifier.set('')
+    archiveVersion.set('1.0')
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.11.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation "org.jetbrains:annotations:26.0.1"
+
+    implementation "it.disi.unitn.ffmpeg:ffmpeg-java-id:1.2.9-beta2.4"
+    implementation "org.apache.commons:commons-exec:1.4.0"
+}
+
+test {
+    useJUnitPlatform()
+}
